@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Helio Qiblah Dashboard</title>
+    <!-- Framework Tailwind CSS untuk Desain -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Firebase SDK (Versi Kompatibel untuk Pemula) -->
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
+    <style>
+        body { background-color: #f3f4f6; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
+        .card-pulse { animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite; }
+        @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.7; } }
+    </style>
+</head>
+<body class="text-gray-800">
+
+    <!-- Header Navbar -->
+    <nav class="bg-emerald-600 p-4 shadow-lg">
+        <div class="max-w-6xl mx-auto flex justify-between items-center text-white">
+            <h1 class="text-2xl font-bold tracking-wider">🕋 HELIO QIBLAH</h1>
+            <span id="koneksi-status" class="bg-red-500 px-3 py-1 rounded-full text-sm font-semibold">Offline</span>
+        </div>
+    </nav>
+
+    <!-- Konten Utama -->
+    <div class="max-w-6xl mx-auto mt-8 p-4">
+        
+        <!-- Status Arah Utama -->
+        <div class="bg-white rounded-xl shadow-md p-6 mb-8 text-center border-t-4 border-emerald-500">
+            <h2 class="text-gray-500 text-sm font-semibold uppercase tracking-widest">Status Arah Saat Ini</h2>
+            <div id="ui-status" class="text-4xl font-extrabold mt-2 text-gray-800">Menunggu Data...</div>
+        </div>
+
+        <!-- Grid Sensor & GPS -->
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+            
+            <!-- Card Latitude -->
+            <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-100 flex items-center justify-between">
+                <div>
+                    <p class="text-gray-400 text-sm font-medium">Latitude (Garis Lintang)</p>
+                    <p id="ui-lat" class="text-2xl font-bold text-gray-700 mt-1">0.000000</p>
+                </div>
+                <div class="text-emerald-500 text-3xl">📍</div>
+            </div>
+
+            <!-- Card Longitude -->
+            <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-100 flex items-center justify-between">
+                <div>
+                    <p class="text-gray-400 text-sm font-medium">Longitude (Garis Bujur)</p>
+                    <p id="ui-lng" class="text-2xl font-bold text-gray-700 mt-1">0.000000</p>
+                </div>
+                <div class="text-emerald-500 text-3xl">🌍</div>
+            </div>
+
+            <!-- Card Sudut Kiblat -->
+            <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-100 flex items-center justify-between">
+                <div>
+                    <p class="text-gray-400 text-sm font-medium">Target Sudut Kiblat</p>
+                    <p id="ui-kiblat" class="text-2xl font-bold text-emerald-600 mt-1">0.00°</p>
+                </div>
+                <div class="text-emerald-500 text-3xl">🧭</div>
+            </div>
+            
+        </div>
+    </div>
+
+    <!-- Script Logika Firebase -->
+    <script>
+        // 1. MASUKKAN CONFIG FIREBASE WEB ANDA DI SINI (Dari Console Firebase > Project Settings > Web App)
+        const firebaseConfig = {
+        apiKey: "AIzaSyB7G3ucjYTQZJ2ql-CSWLp6Jv9tSabHd8M",
+        authDomain: "helioqiblah.firebaseapp.com",
+        databaseURL: "https://helioqiblah-default-rtdb.asia-southeast1.firebasedatabase.app",
+        projectId: "helioqiblah",
+        storageBucket: "helioqiblah.firebasestorage.app",
+        messagingSenderId: "1068811924657",
+        appId: "1:1068811924657:web:233d879293c1d0224ede90"
+        };
+        
+
+        // 2. Inisialisasi Firebase
+        if (!firebase.apps.length) {
+            firebase.initializeApp(firebaseConfig);
+        }
+        const database = firebase.database();
+
+        // 3. Tarik Data Secara Real-Time
+        const navigatorRef = database.ref('/Navigator');
+
+        navigatorRef.on('value', (snapshot) => {
+            const data = snapshot.val();
+            if (data) {
+                // Ubah Status Koneksi
+                const badge = document.getElementById('koneksi-status');
+                badge.textContent = "Online (Live)";
+                badge.classList.remove('bg-red-500');
+                badge.classList.add('bg-emerald-500', 'card-pulse');
+
+                // Update Angka di Layar
+                document.getElementById('ui-lat').innerText = data.Koordinat.Lat.toFixed(6);
+                document.getElementById('ui-lng').innerText = data.Koordinat.Lng.toFixed(6);
+                document.getElementById('ui-kiblat').innerText = data.Sensor.Kiblat.toFixed(2) + "°";
+                
+                // Update Status dengan Warna berbeda
+                const statusEl = document.getElementById('ui-status');
+                statusEl.innerText = data.Status;
+                
+                if(data.Status === "Sudah Sesuai") {
+                    statusEl.className = "text-4xl font-extrabold mt-2 text-emerald-600";
+                } else if(data.Status === "Hampir Tepat") {
+                    statusEl.className = "text-4xl font-extrabold mt-2 text-yellow-500";
+                } else {
+                    statusEl.className = "text-4xl font-extrabold mt-2 text-red-500";
+                }
+            }
+        });
+    </script>
+</body>
+</html>
